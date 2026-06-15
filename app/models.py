@@ -35,3 +35,21 @@ class UpdateAccountRequest(BaseModel):
     min_qty: Optional[int] = None
     max_qty: Optional[int] = None
     service_id: Optional[int] = None
+
+
+class OrderStep(BaseModel):
+    """One order in an account's per-tweet sequence.
+    A value of 0 for service_id/min_qty/max_qty means 'use the account or global default'."""
+    service_id: int = 0
+    min_qty: int = 0
+    max_qty: int = 0
+    delay_minutes: int = 0
+
+    @field_validator("service_id", "min_qty", "max_qty", "delay_minutes")
+    @classmethod
+    def non_negative(cls, v: int) -> int:
+        return max(0, int(v))
+
+
+class PlanUpdateRequest(BaseModel):
+    steps: list[OrderStep]

@@ -9,6 +9,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .db import init_indexes
 from .poller import run_poller
+from .scheduler import run_scheduler
 from .routes import router
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
@@ -20,17 +21,19 @@ STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
 async def lifespan(app: FastAPI):
     await init_indexes()
     stop_event = asyncio.Event()
-    task = asyncio.create_task(run_poller(stop_event))
+    detector = asyncio.create_task(run_poller(stop_event))
+    scheduler = asyncio.create_task(run_scheduler(stop_event))
     app.state.stop_event = stop_event
-    app.state.poller_task = task
+    app.state.tasks = [detector, scheduler]
     try:
         yield
     finally:
         stop_event.set()
-        try:
-            await asyncio.wait_for(task, timeout=10)
-        except asyncio.TimeoutError:
-            task.cancel()
+        for t in (detector, scheduler):
+            try:
+                await asyncio.wait_for(t, timeout=10)
+            except asyncio.TimeoutError:
+                t.cancel()
 
 
 app = FastAPI(title="Tweet Views Automation", lifespan=lifespan)

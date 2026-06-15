@@ -25,9 +25,11 @@ class Settings(BaseSettings):
 
     # --- Behaviour ---
     poll_interval_seconds: int = 60
+    scheduler_tick_seconds: int = 20    # how often to check for due scheduled orders
     only_original_tweets: bool = True   # skip retweets and replies
     dry_run: bool = False               # if True, log orders but don't actually place them
     pending_retry_seconds: int = 120    # retry orders stuck in "pending" older than this
+    processing_retry_seconds: int = 300 # reset scheduled orders stuck "processing" (crash recovery)
 
     # --- Admin auth (protects the management API) ---
     admin_token: str = "change-me"
